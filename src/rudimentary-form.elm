@@ -20,13 +20,14 @@ type alias Model =
     { name : String
     , password : String
     , passwordAgain : String
+    , age : String
     , errorMessage : Error
     }
 
 
 model : Model
 model =
-    Model "" "" "" { color = "", message = "" } 
+    Model "" "" "" "" emptyError 
 
 
 -- UPDATE
@@ -35,6 +36,7 @@ type Msg
     = Name String
     | Password String
     | PasswordAgain String
+    | Age String
     | Submit
 
 
@@ -43,18 +45,25 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         Name name ->
-            { model | name = name , errorMessage = { color = "", message = "" } }
+            { model | name = name , errorMessage = emptyError }
 
         Password password ->
-            { model | password = password, errorMessage = { color = "", message = "" } }
+            { model | password = password, errorMessage = emptyError }
 
         PasswordAgain password ->
-            { model | passwordAgain = password, errorMessage = { color = "", message = "" } }
+            { model | passwordAgain = password, errorMessage = emptyError }
 
         Submit ->
             { model | errorMessage = validate model }
 
+        Age age ->
+            { model | age = age, errorMessage = emptyError }
 
+
+
+emptyError : Error
+emptyError =
+    { color = "", message = "" }
 
 validate : Model -> Error
 validate model =
@@ -64,6 +73,8 @@ validate model =
             else if String.length model.password < 8 then
                 ("red", "Password must be longer than 8 characters!")
             else if not ( Regex.contains (regex "[0-9]|[a-z]|[A-Z]") model.password ) then
+                ("red", "Password must contain upper case, lower case, and numeric characters.")
+            else if (String.toInt model.age) == Err "" then
                 ("red", "Password must contain upper case, lower case, and numeric characters.")
             else
                 ("green", "Ok")
@@ -79,6 +90,7 @@ view model =
     [ input [ type_ "text", placeholder "Name", onInput Name ] []
     , input [ type_ "password", placeholder "Password", onInput Password ] []
     , input [ type_ "password", placeholder "Re-enter Password", onInput PasswordAgain ] []
+    , input [ type_ "text", placeholder "Age", onInput Age ] []
     , input [ type_ "button", onClick Submit, value "Submit" ] []
     , if String.length model.errorMessage.message > 0 then viewValidation model else div [][]
     ]
@@ -86,15 +98,4 @@ view model =
 
 viewValidation : Model -> Html msg
 viewValidation model =
-    let
-        (color, message) =
-            if model.password /= model.passwordAgain then
-                ("red", "Passwords do not match!")
-            else if String.length model.password < 8 then
-                ("red", "Password must be longer than 8 characters!")
-            else if not ( Regex.contains (regex "[0-9]|[a-z]|[A-Z]") model.password ) then
-                ("red", "Password must contain upper case, lower case, and numeric characters.")
-            else
-                ("green", "OK")
-    in
-        div [ style [("color", color)] ] [ text message ] 
+        div [ style [("color", model.errorMessage.color)] ] [ text model.errorMessage.message ] 
